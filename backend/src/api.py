@@ -29,12 +29,11 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 @app.route("/drinks")
-@requires_auth("get:drinks")
 def retrieve_drinks():
         print(" in here!")
         try:
             drinks = Drink.query.order_by(Drink.id).all()
-            short_drinks = [drinks.short() for drink in drinks]
+            short_drinks = [drink.short() for drink in drinks]
             
             return jsonify(
             {
@@ -55,8 +54,7 @@ def retrieve_drinks():
         or appropriate status code indicating reason for failure
 '''
 @app.route("/drinks-detail")
-@requires_auth("get:drinks-detail")
-def retrieve_drinks_detail(payload):
+def retrieve_drinks_detail():
         print("long_drinks in here")
         try:
             drinks = Drink.query.order_by(Drink.id).all()
@@ -84,12 +82,12 @@ def retrieve_drinks_detail(payload):
 @app.route("/drinks", methods=["POST"])
 @requires_auth("post:drinks")
 def add_drink(payload):
-    body = request.get_json()
+        body = request.get_json()
 
-    title= body.get("title", None)
-    recipe = str(body.get("recipe", None)).replace("'", '"')
+        title= body.get("title", None)
+        recipe = str(body.get("recipe", None)).replace("'", '"')
         
-    try:
+    #try:
         drink = Drink(title=title, recipe =recipe)
         drink.insert()
 
@@ -101,8 +99,9 @@ def add_drink(payload):
                         "drinks": drink_.long()
                     }
                 )
-    except:
-        abort(422)
+    #except:
+        #abort(403)
+        
 
 
 
@@ -121,11 +120,12 @@ def add_drink(payload):
 @requires_auth("patch:drinks")
 def patch_drink(payload,id):
     try:
+        body = request.get_json()
         drink = Drink.query.filter(Drink.id == id).one_or_none()
         if drink == None:
             abort(404)
         else:
-            drink.title = 'Black Coffee'
+            drink.title = body.get("title", None)
             drink.update()
 
             return jsonify(
@@ -135,7 +135,7 @@ def patch_drink(payload,id):
                     }
                 )
     except:
-        abort(422)
+        abort(403)
 
 
 
@@ -150,7 +150,7 @@ def patch_drink(payload,id):
         or appropriate status code indicating reason for failure
 '''
 @app.route("/drinks/<int:id>", methods=["DELETE"])
-@requires_auth("patch:drinks")
+@requires_auth("delete:drinks")
 def delete_drink(payload,id):
         drink = Drink.query.filter(Drink.id == id).one_or_none()
         if drink != None:
@@ -163,7 +163,7 @@ def delete_drink(payload,id):
             }
         )
         else:
-            abort(404)
+            abort(401)
         
             
 
@@ -214,5 +214,5 @@ def forbidden(error):
         return jsonify({
             "success": False,
             "error":403,
-            "message" : "You don’t have permission"
+            "message" : "You don't have permission"
         }), 403
